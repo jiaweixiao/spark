@@ -273,6 +273,8 @@ object SparkBuild extends PomBuild {
           "-Wconf:msg=method without a parameter list overrides a method with a single empty one:s",
           // SPARK-35574 Prevent the recurrence of compilation warnings related to `procedure syntax is deprecated`
           "-Wconf:cat=deprecation&msg=procedure syntax is deprecated:e",
+          // SPARK-40497 Upgrade Scala to 2.13.11 and suppress `Implicit definition should have explicit type`
+          "-Wconf:msg=Implicit definition should have explicit type:s",
           // SPARK-35496 Upgrade Scala to 2.13.7 and suppress:
           // 1. `The outer reference in this type test cannot be checked at run time`
           // 2. `the type test for pattern TypeA cannot be checked at runtime because it
