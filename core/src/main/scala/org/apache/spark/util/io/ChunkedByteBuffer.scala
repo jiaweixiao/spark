@@ -208,6 +208,12 @@ private[spark] class ChunkedByteBuffer(var chunks: Array[ByteBuffer]) extends Ex
     }
   }
 
+  /**
+   * Attempt to reclaim any ByteBuffer in this ChunkedByteBuffer which is on-heap.
+   */
+  def reclaim(): Unit = {
+    chunks.foreach(StorageUtils.reclaim)
+  }
 }
 
 private[spark] object ChunkedByteBuffer {

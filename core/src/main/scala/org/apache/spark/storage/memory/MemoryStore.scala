@@ -392,7 +392,10 @@ private[spark] class MemoryStore(
 
   def freeMemoryEntry[T <: MemoryEntry[_]](entry: T): Unit = {
     entry match {
-      case SerializedMemoryEntry(buffer, _, _) => buffer.dispose()
+      case SerializedMemoryEntry(buffer, _, _) => {
+        buffer.dispose()
+        buffer.reclaim()
+      }
       case e: DeserializedMemoryEntry[_] => e.value.foreach {
         case o: AutoCloseable =>
           try {
@@ -415,6 +418,17 @@ private[spark] class MemoryStore(
       memoryManager.releaseStorageMemory(entry.size, entry.memoryMode)
       logDebug(s"Block $blockId of size ${entry.size} dropped " +
         s"from memory (free ${maxMemory - blocksMemoryUsed})")
+      // entry match {
+      //   // Case 1: The entry contains an array of objects.
+      //   case e: DeserializedMemoryEntry[_] =>
+      //     logInfo(s"Block $blockId: Reclaim DeserializedMemoryEntry type " +
+      //       s"${e.value.getClass}, size ${e.value.length}.")
+      //   // Case 2: A SerializedMemoryEntry
+      //   case _ =>
+      //     // No action needed.
+      //     logInfo(s"Block $blockId: Reclaim SerializedMemoryEntry")
+      // }
+
       true
     } else {
       false

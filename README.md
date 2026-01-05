@@ -30,6 +30,18 @@ To build Spark and its example programs, run:
 ./build/mvn -DskipTests clean package
 ```
 
+To build with scala 2.13 and Java 21, run:
+
+```bash
+JAVA_HOME=/path/to/jdk21 ./build/mvn -Pscala-2.13 -DskipTests clean package
+```
+
+To distribute, run:
+
+```bash
+JAVA_HOME=/path/to/jdk21 ./dev/make-distribution.sh --name hadoop3-scala2.13 --tgz --pip -Pscala-2.13 -Dscala.version=2.13.11 -Phadoop-3 -Dhadoop.version=3.3.4
+```
+
 (You do not need to do this if you downloaded a pre-built package.)
 
 More detailed documentation is available from the project site, at

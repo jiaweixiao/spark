@@ -17,6 +17,7 @@
 
 package org.apache.spark.storage
 
+import java.lang.reflect.{Array => JArray} // Renaming for clarity
 import java.nio.{ByteBuffer, MappedByteBuffer}
 
 import scala.collection.Map
@@ -234,6 +235,43 @@ private[spark] object StorageUtils extends Logging {
     if (buffer != null && buffer.isInstanceOf[MappedByteBuffer]) {
       logTrace(s"Disposing of $buffer")
       bufferCleaner(buffer.asInstanceOf[DirectBuffer])
+    }
+  }
+
+  /**
+   * Attempt to reclaim a ByteBuffer if it is byte array.
+   * It need custom Skipswap JVM support for this to work.
+   */
+  def reclaim(buffer: ByteBuffer): Unit = {
+    // Zero out on-heap buffers (primitive arrays) before disposal
+    if (buffer != null && !buffer.isDirect && buffer.hasArray) {
+      // Dump buffer information
+      // val bufferInfo = s"ByteBuffer[isDirect=${buffer.isDirect}, " +
+      //   s"hasArray=${buffer.hasArray}, " +
+      //   s"capacity=${buffer.capacity}, " +
+      //   s"position=${buffer.position}, " +
+      //   s"limit=${buffer.limit}, " +
+      //   s"remaining=${buffer.remaining}, " +
+      //   s"class=${buffer.getClass.getName}]"
+      // logInfo(s"Disposing buffer: $bufferInfo")
+
+      val array = buffer.array()
+      val offset = buffer.arrayOffset()
+      val length = buffer.capacity()
+      if (offset == 0 && length >= 4096) {
+        // DEBUG
+        // Avoid get length from array.length, which will access object header.
+        // logInfo(s"Reclaim on-heap buffer: offset=$offset, cap=$length, arrayLength=${array.length}")
+        // java.util.Arrays.fill(array, offset, offset + length, 0.toByte)
+        try {
+          // JArray.reclaim(array)
+          JArray.reclaimLen(array, length)
+        } catch {
+          case _: NoSuchMethodError =>
+            // java.lang.reflect.reclaim() is only available in skipswap JVM, ignore on standard JVMs
+            logTrace(s"java.lang.reflect.reclaim() only available in skipswap JVM")
+        }
+      }
     }
   }
 
